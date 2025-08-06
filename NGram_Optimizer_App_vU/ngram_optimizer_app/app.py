@@ -72,6 +72,16 @@ if uploaded_file:
 
                 token_df = tokenize_search_terms(st.session_state.cleaned_df)
                 context_df = classify_context(token_df, brand_terms, competitor_terms)
+
+                # ✅ Rename columns in context_df again before metric processing
+                context_df = context_df.rename(columns={
+                    st.session_state.column_map['Impressions']: 'Impressions',
+                    st.session_state.column_map['Clicks']: 'Clicks',
+                    st.session_state.column_map['Spend']: 'Spend',
+                    st.session_state.column_map['Orders']: 'Orders',
+                    st.session_state.column_map['Sales']: 'Sales'
+                })
+
                 metrics_df = compute_metrics(context_df)
                 zoned_df, break_even = assign_efficiency_zones(metrics_df)
 
