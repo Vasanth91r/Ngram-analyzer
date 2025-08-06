@@ -24,9 +24,11 @@ with st.sidebar:
     st.header("Context Keywords")
     brand_input = st.text_area("Brand Terms (one per line)")
     competitor_input = st.text_area("Competitor Terms (one per line)")
-    generate_button = st.button("Generate Insights")
 
-# If file is uploaded
+# Initialize session state
+if "column_finalized" not in st.session_state:
+    st.session_state.column_finalized = False
+
 if uploaded_file:
     if uploaded_file.name.endswith('.csv'):
         df = pd.read_csv(uploaded_file)
@@ -35,7 +37,6 @@ if uploaded_file:
 
     df.columns = df.columns.str.strip()
 
-    # Initialize mapping once
     if "column_map" not in st.session_state:
         st.session_state.column_map = column_mapper(df)
 
@@ -49,32 +50,36 @@ if uploaded_file:
             key=metric
         )
 
-    # 🔁 Rename columns right here
-    df = df.rename(columns={
-        st.session_state.column_map['Impressions']: 'Impressions',
-        st.session_state.column_map['Clicks']: 'Clicks',
-        st.session_state.column_map['Spend']: 'Spend',
-        st.session_state.column_map['Orders']: 'Orders',
-        st.session_state.column_map['Sales']: 'Sales'
-    })
+    # Button to confirm column mapping
+    if st.button("✅ Confirm Column Mapping"):
+        df = df.rename(columns={
+            st.session_state.column_map['Impressions']: 'Impressions',
+            st.session_state.column_map['Clicks']: 'Clicks',
+            st.session_state.column_map['Spend']: 'Spend',
+            st.session_state.column_map['Orders']: 'Orders',
+            st.session_state.column_map['Sales']: 'Sales'
+        })
+        st.session_state.cleaned_df = df
+        st.session_state.column_finalized = True
+        st.success("Column mapping confirmed. You may now generate insights.")
 
-    # Prepare brand & competitor lists
-    brand_terms = [term.strip().lower() for term in brand_input.splitlines() if term.strip()]
-    competitor_terms = [term.strip().lower() for term in competitor_input.splitlines() if term.strip()]
+    # Show Generate button only after column mapping is finalized
+    if st.session_state.column_finalized:
+        if st.button("🚀 Generate Insights"):
+            with st.spinner("Processing data..."):
+                brand_terms = [term.strip().lower() for term in brand_input.splitlines() if term.strip()]
+                competitor_terms = [term.strip().lower() for term in competitor_input.splitlines() if term.strip()]
 
-    # Run processing only when user clicks
-    if generate_button:
-        with st.spinner("Processing data..."):
-            token_df = tokenize_search_terms(df)
-            context_df = classify_context(token_df, brand_terms, competitor_terms)
-            metrics_df = compute_metrics(context_df)
-            zoned_df, break_even = assign_efficiency_zones(metrics_df)
+                token_df = tokenize_search_terms(st.session_state.cleaned_df)
+                context_df = classify_context(token_df, brand_terms, competitor_terms)
+                metrics_df = compute_metrics(context_df)
+                zoned_df, break_even = assign_efficiency_zones(metrics_df)
 
-            excel_paths = export_to_excel(zoned_df)
-            chart_paths = generate_charts(zoned_df, break_even)
-            ppt_path = generate_ppt(zoned_df)
-            zip_path = zip_outputs(excel_paths + chart_paths + [ppt_path])
+                excel_paths = export_to_excel(zoned_df)
+                chart_paths = generate_charts(zoned_df, break_even)
+                ppt_path = generate_ppt(zoned_df)
+                zip_path = zip_outputs(excel_paths + chart_paths + [ppt_path])
 
-            st.success("✅ All outputs generated!")
-            with open(zip_path, "rb") as f:
-                st.download_button("Download ZIP Bundle", f, file_name="ngram_outputs.zip")
+                st.success("✅ All outputs generated!")
+                with open(zip_path, "rb") as f:
+                    st.download_button("Download ZIP Bundle", f, file_name="ngram_outputs.zip")
