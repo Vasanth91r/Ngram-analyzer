@@ -26,9 +26,8 @@ with st.sidebar:
     competitor_input = st.text_area("Competitor Terms (one per line)")
     generate_button = st.button("Generate Insights")
 
-# If a file is uploaded
+# If file is uploaded
 if uploaded_file:
-    # Read file
     if uploaded_file.name.endswith('.csv'):
         df = pd.read_csv(uploaded_file)
     else:
@@ -36,7 +35,7 @@ if uploaded_file:
 
     df.columns = df.columns.str.strip()
 
-    # Initialize column map
+    # Initialize mapping once
     if "column_map" not in st.session_state:
         st.session_state.column_map = column_mapper(df)
 
@@ -50,29 +49,27 @@ if uploaded_file:
             key=metric
         )
 
-    # Parse context terms
+    # 🔁 Rename columns right here
+    df = df.rename(columns={
+        st.session_state.column_map['Impressions']: 'Impressions',
+        st.session_state.column_map['Clicks']: 'Clicks',
+        st.session_state.column_map['Spend']: 'Spend',
+        st.session_state.column_map['Orders']: 'Orders',
+        st.session_state.column_map['Sales']: 'Sales'
+    })
+
+    # Prepare brand & competitor lists
     brand_terms = [term.strip().lower() for term in brand_input.splitlines() if term.strip()]
     competitor_terms = [term.strip().lower() for term in competitor_input.splitlines() if term.strip()]
 
-    # Only process after user confirms
+    # Run processing only when user clicks
     if generate_button:
         with st.spinner("Processing data..."):
-            # Rename columns based on user selection
-            df = df.rename(columns={
-                st.session_state.column_map['Impressions']: 'Impressions',
-                st.session_state.column_map['Clicks']: 'Clicks',
-                st.session_state.column_map['Spend']: 'Spend',
-                st.session_state.column_map['Orders']: 'Orders',
-                st.session_state.column_map['Sales']: 'Sales'
-            })
-
-            # Pipeline
             token_df = tokenize_search_terms(df)
             context_df = classify_context(token_df, brand_terms, competitor_terms)
             metrics_df = compute_metrics(context_df)
             zoned_df, break_even = assign_efficiency_zones(metrics_df)
 
-            # Outputs
             excel_paths = export_to_excel(zoned_df)
             chart_paths = generate_charts(zoned_df, break_even)
             ppt_path = generate_ppt(zoned_df)
