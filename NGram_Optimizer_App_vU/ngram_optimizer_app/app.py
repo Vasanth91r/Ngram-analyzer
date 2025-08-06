@@ -91,5 +91,16 @@ if uploaded_file:
                 zip_path = zip_outputs(excel_paths + chart_paths + [ppt_path])
 
                 st.success("✅ All outputs generated!")
+
+                # 🔍 Preview HTML bubble charts
+                st.subheader("📈 Chart Previews")
+                html_charts = [c for c in chart_paths if c.endswith(".html")]
+                for html_file in html_charts:
+                    with open(html_file, "r", encoding="utf-8") as f:
+                        html_content = f.read()
+                        st.markdown(f"**{os.path.basename(html_file)}**", unsafe_allow_html=True)
+                        st.components.v1.html(html_content, height=600, scrolling=True)
+
+                # 📥 Download ZIP
                 with open(zip_path, "rb") as f:
-                    st.download_button("Download ZIP Bundle", f, file_name="ngram_outputs.zip")
+                    st.download_button("📥 Download ZIP Bundle", f, file_name="ngram_outputs.zip")
