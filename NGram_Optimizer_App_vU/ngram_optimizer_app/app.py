@@ -99,7 +99,7 @@ if uploaded_file:
                     with open(html_file, "r", encoding="utf-8") as f:
                         html_content = f.read()
                         st.markdown(f"**{os.path.basename(html_file)}**", unsafe_allow_html=True)
-                        st.components.v1.html(html_content, height=600, width=0, scrolling=True)
+                        st.components.v1.html(html_content, height=600, width=1000, scrolling=True)
 
                 # 📥 Download ZIP
                 with open(zip_path, "rb") as f:
