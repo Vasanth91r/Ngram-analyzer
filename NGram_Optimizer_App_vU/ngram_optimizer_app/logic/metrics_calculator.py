@@ -2,13 +2,8 @@
 import pandas as pd
 
 def compute_metrics(df):
-    # Required original columns from uploaded data
-    required_columns = [
-        'Impressions', 'Clicks', 'Spend',
-        '14 Day Total Orders (#)', '14 Day Total Sales'
-    ]
-
-    # Validate required columns
+    # Standardized columns expected after renaming
+    required_columns = ['Impressions', 'Clicks', 'Spend', 'Orders', 'Sales']
     missing = [col for col in required_columns if col not in df.columns]
     if missing:
         raise KeyError(f"Missing required columns: {missing}")
@@ -28,15 +23,9 @@ def compute_metrics(df):
         'Impressions': 'sum',
         'Clicks': 'sum',
         'Spend': 'sum',
-        '14 Day Total Orders (#)': 'sum',
-        '14 Day Total Sales': 'sum'
+        'Orders': 'sum',
+        'Sales': 'sum'
     }).reset_index()
-
-    # Rename standardized columns
-    agg = agg.rename(columns={
-        '14 Day Total Orders (#)': 'Orders',
-        '14 Day Total Sales': 'Sales'
-    })
 
     # Derived metrics with safe division
     agg['CTR'] = agg['Clicks'] / agg['Impressions'].replace(0, 1)
