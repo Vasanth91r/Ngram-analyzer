@@ -12,28 +12,52 @@ from logic.zone_classifier import assign_efficiency_zones
 from outputs.excel_exporter import export_to_excel
 from outputs.chart_generator import generate_charts
 from outputs.ppt_generator import generate_ppt
-from utils.file_manager import zip_outputs
+from utils.file_manager import zip_outputs, column_mapper
 
 st.set_page_config(page_title="Amazon SP N-Gram Optimizer", layout="wide")
 st.title("📊 Amazon Sponsored Products N-Gram Analyzer")
 
 with st.sidebar:
     st.header("Upload Files")
-    csv_file = st.file_uploader("Amazon SP Impression Share Report (CSV)", type="csv")
+    uploaded_file = st.file_uploader("Amazon SP Impression Share Report", type=["csv", "xls", "xlsx"])
     st.header("Context Keywords")
     brand_input = st.text_area("Brand Terms (one per line)")
     competitor_input = st.text_area("Competitor Terms (one per line)")
     generate_button = st.button("Generate Insights")
 
-if generate_button and csv_file:
+if generate_button and uploaded_file:
     with st.spinner("Processing data..."):
-        df = pd.read_csv(csv_file)
-        df.columns = df.columns.str.strip() #clean column headers
+        if uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file, engine="openpyxl")
+
+        df.columns = df.columns.str.strip()
+        column_map = column_mapper(df)
+
+        st.subheader("🔎 Column Mapping Preview")
+        for metric in ['Impressions', 'Clicks', 'Spend', 'Orders', 'Sales']:
+            default = column_map.get(metric, '')
+            column_map[metric] = st.selectbox(
+                f"Select column for {metric}",
+                df.columns,
+                index=df.columns.get_loc(default) if default in df.columns else 0
+            )
+
         brand_terms = [term.strip().lower() for term in brand_input.splitlines() if term.strip()]
         competitor_terms = [term.strip().lower() for term in competitor_input.splitlines() if term.strip()]
 
         token_df = tokenize_search_terms(df)
         context_df = classify_context(token_df, brand_terms, competitor_terms)
+
+        context_df = context_df.rename(columns={
+            column_map['Impressions']: 'Impressions',
+            column_map['Clicks']: 'Clicks',
+            column_map['Spend']: 'Spend',
+            column_map['Orders']: 'Orders',
+            column_map['Sales']: 'Sales'
+        })
+
         metrics_df = compute_metrics(context_df)
         zoned_df, break_even = assign_efficiency_zones(metrics_df)
 
