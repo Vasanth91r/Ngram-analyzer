@@ -1,0 +1,14 @@
+NGram Analyzer Tool – How to Use
+
+1. Double-click "NGramAnalyzer.exe"
+2. Your browser will open (http://localhost:8501)
+3. Upload your Amazon Impression Share CSV file
+4. Paste your Brand and Competitor terms (one per line)
+5. Click "Generate Insights"
+6. Download the ZIP containing:
+   - Excel summaries
+   - Bubble chart HTMLs
+   - PowerPoint insights
+
+✅ No installation needed
+🚫 No internet required
